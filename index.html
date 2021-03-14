@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Pictureframe</title>
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Roboto+Condensed:wght@300&family=Roboto:wght@300&display=swap" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.9.55/css/materialdesignicons.min.css" rel="stylesheet">
+    </head>
+    <style>
+        html {
+            height: 100%;
+        }
+        body {
+            margin: 0;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
+            height: 100%;
+        }
+        .image {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            transition: opacity 1s ease-in-out;
+        }
+        #image-1 {
+            z-index: 20;
+        }
+        #image-2 {
+            z-index: 10;
+        }
+        #right-bottom {
+            position: absolute;
+            z-index: 30;
+            right: 0;
+            bottom: 0;
+            padding: 20px;
+            color: white;
+            text-align: right;
+        }
+        #clock {
+            font-size: 10em;
+            display: block;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+        }
+        #date {
+            font-size: 2em;
+            display: block;
+            font-family: 'Roboto Condensed', sans-serif;
+            font-weight: 300;
+        }
+        #right-top {
+            position: absolute;
+            z-index: 29;
+            right: 0;
+            top: 0;
+            padding: 20px;
+            text-align: right;
+        }
+        #left-bottom {
+            position: absolute;
+            z-index: 29;
+            left: 0;
+            bottom: 0;
+            padding: 20px;
+            text-align: left;
+            color: white;
+            font-family: 'Roboto Condensed';
+            font-weight: 300;
+            font-size: 2em;
+        }
+        .items {
+            transition: margin 1s;
+        }
+        .weather {
+            color: white;
+            font-size: 8em;
+            font-family: 'Roboto', sans-serif;
+        }
+        #temperaturelabel {
+            vertical-align: super;
+            font-size: 0.5em;
+            margin-right: 1em;
+        }
+    </style>
+    <body>
+        <div class="image" id="image-1"></div>
+        <div class="image" id="image-2"></div>
+        <a class="weather" href="config.html">
+            <div id="right-top" class="items">
+                <span id="weather"><span id="weathertemperature">0,0</span><span id="temperaturelabel">&deg;C</span><span id="weathericon" class="mdi mdi-alert-circle"></span></span>
+            </div>
+        </a>
+        <div id="right-bottom" class="items">
+            <span id="clock">13:37</span>
+            <span id="date">Monday 1 january 2021</span>
+        </div>
+        <div id="left-bottom" class="items">
+            <span class="picturedescription mdi mdi-image"></span>
+            <span id="picturedescription"></span>
+        </div>
+        <script>
+            //
+            // Picture listing
+            //
+			async function* makeTextFileLineIterator(fileURL) {
+			    const utf8Decoder = new TextDecoder('utf-8');
+			    const response = await fetch(fileURL);
+			    const reader = response.body.getReader();
+			    let { value: chunk, done: readerDone } = await reader.read();
+			    chunk = chunk ? utf8Decoder.decode(chunk) : '';
+
+			    const re = /\n|\r|\r\n/gm;
+			    let startIndex = 0;
+			    let result;
+
+			    for (;;) {
+			        let result = re.exec(chunk);
+			        if (!result) {
+			            if (readerDone) {
+			                break;
+			            }
+			            let remainder = chunk.substr(startIndex);
+			            ({ value: chunk, done: readerDone } = await reader.read());
+			            chunk = remainder + (chunk ? utf8Decoder.decode(chunk) : '');
+			            startIndex = re.lastIndex = 0;
+			            continue;
+			        }
+			        yield chunk.substring(startIndex, result.index);
+			        startIndex = re.lastIndex;
+			    }
+			    if (startIndex < chunk.length) {
+			        // last line didn't end in a newline char
+			        yield chunk.substr(startIndex);
+			    }
+			}
+            
+            //
+            // Supporting functions
+            //
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            function loadSettings() {
+                if (!localStorage.getItem('configged')) {
+                    document.getElementById('weather').innerText = "No config found! Click here.";
+                }
+                config_hassurl = localStorage.getItem('hassurl');
+                config_hasstoken = localStorage.getItem('hasstoken');
+                config_weatherentity = localStorage.getItem('weatherentity');
+            }
+            
+            //
+            // Date and time
+            //
+            function updateTime() {
+                var date = new Date();
+                var h = date.getHours();
+                var m = date.getMinutes();
+                m = (m < 10) ? "0" + m : m;
+                var time = h + ":" + m;
+                document.getElementById("clock").innerText = time;
+
+                const dateOptions = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+                document.getElementById("date").innerText = date.toLocaleDateString("en-GB", dateOptions);
+            }
+
+            function antiBurnIn() {
+                if (antiBurnInAdding == true) {
+                    antiBurnInMargin++
+                }
+                else {
+                    antiBurnInMargin--
+                }
+                if (antiBurnInMargin > 30) {
+                    antiBurnInAdding = false;
+                }
+                else if (antiBurnInMargin < 1) {
+                    antiBurnInAdding = true;
+                }
+                var cornerItems = document.getElementsByClassName('items');
+                for (var i = 0; i < cornerItems.length; i++) {
+                    cornerItems[i].style.margin = antiBurnInMargin + 'px';
+                    console.log('Change margin to:' + antiBurnInMargin);
+                }
+            }
+
+            //
+            // Weather
+            //
+            const weatherIcons = {
+                "clear-night": "mdi-weather-night",
+                cloudy: "mdi-weather-cloudy",
+                exceptional: "mdi-alert-circle-outline",
+                fog: "mdi-weather-fog",
+                hail: "mdi-weather-hail",
+                lightning: "mdi-weather-lightning",
+                "lightning-rainy": "mdi-weather-lightning-rainy",
+                partlycloudy: "mdi-weather-partly-cloudy",
+                pouring: "mdi-weather-pouring",
+                rainy: "mdi-weather-rainy",
+                snowy: "mdi-weather-snowy",
+                "snowy-rainy": "mdi-weather-snowy-rainy",
+                sunny: "mdi-weather-sunny",
+                windy: "mdi-weather-windy",
+                "windy-variant": "mdi-weather-windy-variant"
+            };
+
+            function updateWeather() {
+                let weatherdata;
+                fetch(config_hassurl + '/api/states/' + config_weatherentity, {
+                    method: "get",
+                    headers: new Headers({
+                        "Authorization": "Bearer " + config_hasstoken})
+                        })
+                    .then(
+                        function(u){ return u.json();})
+                    .then(
+                        function(json){ processWeather(json); });
+            }
+
+            function processWeather(json) {
+                console.log(json);
+                var temperature = json['attributes']['temperature'].toString().replace('.', ',');
+                document.getElementById('weathertemperature').innerText = temperature;
+                document.getElementById('weathericon').className = 'mdi ' + weatherIcons[json['state']];
+            }
+
+            //
+            // Description label
+            //
+            function updateDescription(path) {
+                var directory = path.split('/')[0]
+                document.getElementById('picturedescription').innerText = directory;
+            }
+
+            //
+            // Main function
+            //
+			async function run() {
+                // Setup image list.
+                let imageList = [];
+			    for await (let line of makeTextFileLineIterator('pictures/index.txt')) {
+                    imageList.push(line)
+			    }
+                console.log(imageList);
+
+                while (true) { 
+                    const randomPicture = imageList[Math.floor(Math.random() * imageList.length)];
+                    console.log("Changing to: " + randomPicture)
+                    //document.getElementById('background').src = "pictures/" + randomPicture;
+                    // Pre-load image.
+                    var newImage = new Image();
+                    newImage.onload = async function() {
+                        // When new image has been loaded, change the image.
+                        // Change background image, fade foreground out, change Z-index, update vars.
+                        document.getElementById(backgroundImage).style.backgroundImage = "url('pictures/" + randomPicture + "')";
+                        document.getElementById(foregroundImage).style.opacity = "0";
+                        await sleep(1000);
+                        document.getElementById(backgroundImage).style.zIndex = "20";
+                        document.getElementById(foregroundImage).style.zIndex = "10";
+                        document.getElementById(foregroundImage).style.opacity = "1";
+                        if (foregroundImage == "image-1") {
+                            foregroundImage = "image-2";
+                            backgroundImage = "image-1";
+                        } else {
+                            foregroundImage = "image-1";
+                            backgroundImage = "image-2";
+                        }
+                        await sleep(1000);
+                    }
+                    newImage.src = 'pictures/' + randomPicture;
+                    updateTime();
+                    updateWeather();
+                    updateDescription(randomPicture);
+                    antiBurnIn();
+                    await sleep(5000);
+                }
+			}
+            // Prepare variables
+            var foregroundImage="image-1";
+            var backgroundImage="image-2";
+            var antiBurnInMargin=0;
+            var antiBurnInAdding=true;
+            var config_hassurl;
+            var config_hasstoken;
+            var config_weatherentity;
+
+            loadSettings();
+            run();
+        </script>
+    </body>
+</html>
