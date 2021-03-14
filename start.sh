@@ -2,4 +2,4 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 echo "Directory: $DIR"
 cd "$DIR"
-python -m http.server
+python3 -m http.server
