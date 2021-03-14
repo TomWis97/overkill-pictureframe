@@ -16,8 +16,23 @@
             <input id="weatherentity" type="text"><br>
             <button type="button" onclick="saveSettings()">Save settings</button>
             <button type="button" onclick="loadSettings()">Discard changes</button>
+            <button type="button" onclick="readConfig()">Import config from config.json</button>
         </form>
         <script>
+            function readConfig() {
+                fetch("/config.json")
+                .then(
+                    function(u){ return u.json(); })
+                .then(
+                    function(json){ importConfig(json); });
+            }
+
+            function importConfig(json) {
+                document.getElementById('hassurl').value = json['hassurl'];
+                document.getElementById('hasstoken').value = json['hasstoken'];
+                document.getElementById('weatherentity').value = json['weatherentity'];
+            }
+
             function loadSettings() {
                 if (!localStorage.getItem('configged')) {
                     document.getElementById('message').innerText = "No settings detected.";
