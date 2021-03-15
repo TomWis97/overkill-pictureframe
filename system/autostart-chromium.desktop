@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=overkill-pictureframe
+Comment=Autostarts chromium in desktop mode
+NoDisplay=false
+Exec=chromium-browser --kiosk http://127.0.0.1/index.html
