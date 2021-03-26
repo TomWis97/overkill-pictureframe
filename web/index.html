@@ -7,6 +7,9 @@
         <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.9.55/css/materialdesignicons.min.css" rel="stylesheet">
     </head>
     <style>
+        :root {
+            --main-text-color: white;
+        }
         html {
             height: 100%;
         }
@@ -38,7 +41,7 @@
             right: 0;
             bottom: 0;
             padding: 20px;
-            color: white;
+            color: var(--main-text-color);
             text-align: right;
         }
         #clock {
@@ -61,6 +64,18 @@
             padding: 20px;
             text-align: right;
         }
+        #left-top {
+            position: absolute;
+            z-index: 29;
+            left: 0;
+            top: 0;
+            padding: 20px;
+            text-align: left;
+            color: var(--main-text-color);
+            font-family: 'Roboto Condensed';
+            font-weight: 300;
+            font-size: 2em;
+        }
         #left-bottom {
             position: absolute;
             z-index: 29;
@@ -68,7 +83,7 @@
             bottom: 0;
             padding: 20px;
             text-align: left;
-            color: white;
+            color: var(--main-text-color);
             font-family: 'Roboto Condensed';
             font-weight: 300;
             font-size: 2em;
@@ -77,7 +92,7 @@
             transition: margin 1s;
         }
         .weather {
-            color: white;
+            color: var(--main-text-color);
             font-size: 8em;
             font-family: 'Roboto', sans-serif;
         }
@@ -90,6 +105,10 @@
     <body>
         <div class="image" id="image-1"></div>
         <div class="image" id="image-2"></div>
+        <div id="left-top" class="items">
+            <table id="entities">
+            </table>
+        </div>
         <a class="weather" href="config.html">
             <div id="right-top" class="items">
                 <span id="weather"><span id="weathertemperature">0,0</span><span id="temperaturelabel">&deg;C</span><span id="weathericon" class="mdi mdi-alert-circle"></span></span>
@@ -153,6 +172,22 @@
                 config_hassurl = localStorage.getItem('hassurl');
                 config_hasstoken = localStorage.getItem('hasstoken');
                 config_weatherentity = localStorage.getItem('weatherentity');
+                config_entities = processEntities(localStorage.getItem('entities'));
+                console.log("Entities:", config_entities);
+            }
+            
+            function processEntities(raw_data) {
+                // This function takes the newline and comma separated input and creates an array.
+                var fullconfig = [];
+                var lines = raw_data.split('\n');
+                for (var i = 0;i < lines.length;i++){
+                    console.log("Line:" + lines[i]);
+                    var splitline = lines[i].split(',');
+                    fullconfig.push({"entity_id": splitline[0],
+                                    "display_name": splitline[1],
+                                    "unit": splitline[2]});
+                }
+                return fullconfig;
             }
             
             //
@@ -240,6 +275,70 @@
             }
 
             //
+            // Entities table
+            //
+            function renderEntities(config) {
+                // This function creates the rows in the entities table
+                var table = document.getElementById('entities');
+                for (entity in config) {
+                    // Create row and cells.
+                    var newRow = table.insertRow();
+                    var cellIcon = newRow.insertCell(0);
+                    var cellName = newRow.insertCell(1);
+                    var cellValue = newRow.insertCell(2);
+                    
+                    // Add classes and ids
+                    cellIcon.classList.add('table-icon');
+                    cellIcon.id = 'entities-' + config[entity]['entity_id'] + '-icon';
+                    cellName.classList.add('table-name');
+                    cellName.id = 'entities-' + config[entity]['entity_id'] + '-name';
+                    cellValue.classList.add('table-value');
+                    cellValue.id = 'entities-' + config[entity]['entity_id'] + '-value';
+
+                    // Add span
+                    var newSpan = document.createElement('span');
+                    cellIcon.appendChild(newSpan);
+                    newSpan.classList.add('mdi');
+                    newSpan.id = 'entities-' + config[entity]['entity_id'] + '-iconspan';
+                }
+            }
+
+            function getEntity(entityIndex, entity) {
+                console.log('getEntity(', entityIndex, entity, ')');
+                let weatherdata;
+                fetch(config_hassurl + '/api/states/' + entity, {
+                    method: "get",
+                    headers: new Headers({
+                        "Authorization": "Bearer " + config_hasstoken})
+                        })
+                    .then(
+                        function(u){ return u.json();})
+                    .then(
+                        function(json){ updateSingleEntity(entityIndex, entity, json); });
+            }
+
+            function updateSingleEntity(entity_index, entity_id, data) {
+                    console.log("UpdateSingleEntity", entity_index, entity_id, data);
+                    var iconSpan = document.getElementById('entities-' + entity_id + '-iconspan');
+                    var nameCell = document.getElementById('entities-' + entity_id + '-name');
+                    var valueCell = document.getElementById('entities-' + entity_id + '-value');
+                    iconSpan.classList.value = "mdi " + data['attributes']['icon'].replace(':', '-');
+                    if (config_entities[entity_index]['display_name'] == "") {
+                        nameCell.innerHTML = data['attributes']['friendly_name'];
+                    } else {
+                        nameCell.innerHTML = config_entities[entity_index]['display_name'];
+                    }
+                    valueCell.innerHTML = data['state'] + ' ' + config_entities[entity_index]['unit'];
+            }
+
+            function updateEntities() {
+                for (entity in config_entities) {
+                    // Call getEntity with index and entity config
+                    getEntity(entity, config_entities[entity]['entity_id']);
+                }
+            }
+
+            //
             // Main function
             //
 			async function run() {
@@ -249,6 +348,9 @@
                     imageList.push(line)
 			    }
                 console.log(imageList);
+
+                // Setup entity table
+                renderEntities(config_entities);
 
                 while (true) { 
                     const randomPicture = imageList[Math.floor(Math.random() * imageList.length)];
@@ -278,6 +380,7 @@
                     updateTime();
                     updateWeather();
                     updateDescription(randomPicture);
+                    updateEntities();
                     antiBurnIn();
                     await sleep(30000);
                 }
@@ -290,6 +393,7 @@
             var config_hassurl;
             var config_hasstoken;
             var config_weatherentity;
+            var config_entities;
 
             loadSettings();
             run();

@@ -14,6 +14,8 @@
             <input id="hasstoken" type="text"><br>
             <label for="weatherentity">Weather entity in Home Assistant</label>
             <input id="weatherentity" type="text"><br>
+            <label for="entities">Additional entities to show</label>
+            <textarea id="entities" name="entities" cols="80" rows="10"></textarea><br>
             <button type="button" onclick="saveSettings()">Save settings</button>
             <button type="button" onclick="loadSettings()">Discard changes</button>
             <button type="button" onclick="readConfig()">Import config from config.json</button>
@@ -31,6 +33,7 @@
                 document.getElementById('hassurl').value = json['hassurl'];
                 document.getElementById('hasstoken').value = json['hasstoken'];
                 document.getElementById('weatherentity').value = json['weatherentity'];
+                document.getElementById('entities').value = json['entities'];
             }
 
             function loadSettings() {
@@ -40,6 +43,7 @@
                 document.getElementById('hassurl').value = localStorage.getItem('hassurl');
                 document.getElementById('hasstoken').value = localStorage.getItem('hasstoken');
                 document.getElementById('weatherentity').value = localStorage.getItem('weatherentity');
+                document.getElementById('entities').value = localStorage.getItem('entities');
             }
 
             function saveSettings() {
@@ -47,6 +51,7 @@
                 localStorage.setItem('hassurl', document.getElementById('hassurl').value);
                 localStorage.setItem('hasstoken', document.getElementById('hasstoken').value);
                 localStorage.setItem('weatherentity', document.getElementById('weatherentity').value);
+                localStorage.setItem('entities', document.getElementById('entities').value);
                 document.getElementById('message').innerText = "Settings saved.";
                 sleep(1000);
                 window.location.href = '/index.html';
