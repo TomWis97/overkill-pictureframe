@@ -8,7 +8,7 @@
     </head>
     <style>
         :root {
-            --main-text-color: white;
+            --main-text-color: #fefefe;
         }
         html {
             height: 100%;
@@ -101,6 +101,12 @@
             font-size: 0.5em;
             margin-right: 1em;
         }
+        .table-value {
+            padding-left: 0.5em;
+        }
+        .table-name {
+            padding-left: 0.5em;
+        }
     </style>
     <body>
         <div class="image" id="image-1"></div>
@@ -181,7 +187,6 @@
                 var fullconfig = [];
                 var lines = raw_data.split('\n');
                 for (var i = 0;i < lines.length;i++){
-                    console.log("Line:" + lines[i]);
                     var splitline = lines[i].split(',');
                     fullconfig.push({"entity_id": splitline[0],
                                     "display_name": splitline[1],
@@ -221,7 +226,6 @@
                 var cornerItems = document.getElementsByClassName('items');
                 for (var i = 0; i < cornerItems.length; i++) {
                     cornerItems[i].style.margin = antiBurnInMargin + 'px';
-                    console.log('Change margin to:' + antiBurnInMargin);
                 }
             }
 
@@ -260,7 +264,6 @@
             }
 
             function processWeather(json) {
-                console.log(json);
                 var temperature = json['attributes']['temperature'].toString().replace('.', ',');
                 document.getElementById('weathertemperature').innerText = temperature;
                 document.getElementById('weathericon').className = 'mdi ' + weatherIcons[json['state']];
@@ -304,7 +307,6 @@
             }
 
             function getEntity(entityIndex, entity) {
-                console.log('getEntity(', entityIndex, entity, ')');
                 let weatherdata;
                 fetch(config_hassurl + '/api/states/' + entity, {
                     method: "get",
@@ -318,17 +320,28 @@
             }
 
             function updateSingleEntity(entity_index, entity_id, data) {
-                    console.log("UpdateSingleEntity", entity_index, entity_id, data);
                     var iconSpan = document.getElementById('entities-' + entity_id + '-iconspan');
                     var nameCell = document.getElementById('entities-' + entity_id + '-name');
                     var valueCell = document.getElementById('entities-' + entity_id + '-value');
-                    iconSpan.classList.value = "mdi " + data['attributes']['icon'].replace(':', '-');
+                    if ('icon' in data['attributes']) {
+                        iconSpan.classList.value = "mdi " + data['attributes']['icon'].replace(':', '-');
+                    } else if (entity_id.startsWith('binary_sensor.')) {
+                        if (data['state'] == "on") {
+                            iconSpan.classList.value = "mdi mdi-check-circle";
+                        } else if (data['state'] == "off") {
+                            iconSpan.classList.value = "mdi mdi-checkbox-blank-circle-outline";
+                        } else {
+                            iconSpan.classList.value = "mdi mdi-alert-circle-outline";
+                        }
+                    }
                     if (config_entities[entity_index]['display_name'] == "") {
                         nameCell.innerHTML = data['attributes']['friendly_name'];
                     } else {
                         nameCell.innerHTML = config_entities[entity_index]['display_name'];
                     }
-                    valueCell.innerHTML = data['state'] + ' ' + config_entities[entity_index]['unit'];
+                    if (! entity_id.startsWith('binary_sensor.')) {
+                        valueCell.innerHTML = data['state'] + ' ' + config_entities[entity_index]['unit'];
+                    }
             }
 
             function updateEntities() {
