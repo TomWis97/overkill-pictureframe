@@ -340,7 +340,12 @@
                         nameCell.innerHTML = config_entities[entity_index]['display_name'];
                     }
                     if (! entity_id.startsWith('binary_sensor.')) {
-                        valueCell.innerHTML = data['state'] + ' ' + config_entities[entity_index]['unit'];
+                        if (/^\d+\.\d+$/.test(data.state)) {
+                            valueCell.innerHTML = parseFloat(data.state).toFixed(1) + ' ' + config_entities[entity_index]['unit'];
+                        }
+                        else {
+                            valueCell.innerHTML = data['state'] + ' ' + config_entities[entity_index]['unit'];
+                        }
                     }
             }
 
