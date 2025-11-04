@@ -28,11 +28,21 @@
             top: 0px;
             left: 0px;
             transition: opacity 1s ease-in-out;
+            background-repeat: no-repeat;
+            background-position: center;
         }
         #image-1 {
+            z-index: 21;
+            backdrop-filter: blur(10px);
+        }
+        #image-1-back {
             z-index: 20;
         }
         #image-2 {
+            z-index: 11;
+            backdrop-filter: blur(10px);
+        }
+        #image-2-back {
             z-index: 10;
         }
         #right-bottom {
@@ -110,7 +120,9 @@
     </style>
     <body>
         <div class="image" id="image-1"></div>
+        <div class="image" id="image-1-back"></div>
         <div class="image" id="image-2"></div>
+        <div class="image" id="image-2-back"></div>
         <div id="left-top" class="items">
             <table id="entities">
             </table>
@@ -320,6 +332,7 @@
             }
 
             function updateSingleEntity(entity_index, entity_id, data) {
+                    console.log("Updating", entity_id)
                     var iconSpan = document.getElementById('entities-' + entity_id + '-iconspan');
                     var nameCell = document.getElementById('entities-' + entity_id + '-name');
                     var valueCell = document.getElementById('entities-' + entity_id + '-value');
@@ -377,20 +390,37 @@
                     // Pre-load image.
                     var newImage = new Image();
                     newImage.onload = async function() {
+                        const is_portrait = this.width > this.height ? false : true;
+                        console.log("Portrait: " + is_portrait);
+                        if (is_portrait) {
+                            document.getElementById(backgroundImage).style.backgroundSize = "contain";
+                        }
+                        else {
+                            document.getElementById(backgroundImage).style.backgroundSize = "cover";
+                        }
                         // When new image has been loaded, change the image.
                         // Change background image, fade foreground out, change Z-index, update vars.
                         document.getElementById(backgroundImage).style.backgroundImage = "url('pictures/" + randomPicture + "')";
+                        document.getElementById(backgroundImageBack).style.backgroundImage = "url('pictures/" + randomPicture + "')";
                         document.getElementById(foregroundImage).style.opacity = "0";
+                        document.getElementById(foregroundImageBack).style.opacity = "0";
                         await sleep(1000);
-                        document.getElementById(backgroundImage).style.zIndex = "20";
-                        document.getElementById(foregroundImage).style.zIndex = "10";
+                        document.getElementById(backgroundImage).style.zIndex = "21";
+                        document.getElementById(backgroundImageBack).style.zIndex = "20";
+                        document.getElementById(foregroundImage).style.zIndex = "11";
+                        document.getElementById(foregroundImageBack).style.zIndex = "10";
                         document.getElementById(foregroundImage).style.opacity = "1";
+                        document.getElementById(foregroundImageBack).style.opacity = "1";
                         if (foregroundImage == "image-1") {
                             foregroundImage = "image-2";
+                            foregroundImageBack = "image-2-back";
                             backgroundImage = "image-1";
+                            backgroundImageBack = "image-1-back";
                         } else {
                             foregroundImage = "image-1";
+                            foregroundImageBack = "image-1-back";
                             backgroundImage = "image-2";
+                            backgroundImageBack = "image-2-back";
                         }
                         await sleep(1000);
                     }
@@ -405,7 +435,9 @@
 			}
             // Prepare variables
             var foregroundImage="image-1";
+            var foregroundImageBack="image-1-back";
             var backgroundImage="image-2";
+            var backgroundImageBack="image-2-back";
             var antiBurnInMargin=0;
             var antiBurnInAdding=true;
             var config_hassurl;
