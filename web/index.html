@@ -194,7 +194,7 @@
                 config_hasstoken = localStorage.getItem('hasstoken');
                 config_weatherentity = localStorage.getItem('weatherentity');
                 config_entities = processEntities(localStorage.getItem('entities'));
-                console.log("Entities:", config_entities);
+                config_fontscale = localStorage.getItem('font-scale');
             }
             
             function processEntities(raw_data) {
@@ -335,7 +335,6 @@
             }
 
             function updateSingleEntity(entity_index, entity_id, data) {
-                    console.log("Updating", entity_id)
                     var iconSpan = document.getElementById('entities-' + entity_id + '-iconspan');
                     var nameCell = document.getElementById('entities-' + entity_id + '-name');
                     var valueCell = document.getElementById('entities-' + entity_id + '-value');
@@ -381,10 +380,12 @@
 			    for await (let line of makeTextFileLineIterator('pictures/index.txt')) {
                     imageList.push(line)
 			    }
-                console.log(imageList);
 
                 // Setup entity table
                 renderEntities(config_entities);
+
+                // Set font scale
+                document.body.style.fontSize = config_fontscale + "%";
 
                 while (true) { 
                     const randomPicture = imageList[Math.floor(Math.random() * imageList.length)];
@@ -394,7 +395,6 @@
                     var newImage = new Image();
                     newImage.onload = async function() {
                         const is_portrait = this.width > this.height ? false : true;
-                        console.log("Portrait: " + is_portrait);
                         if (is_portrait) {
                             document.getElementById(backgroundImage).style.backgroundSize = "contain";
                         }
@@ -447,6 +447,7 @@
             var config_hasstoken;
             var config_weatherentity;
             var config_entities;
+            var config_fontscale;
 
             loadSettings();
             run();

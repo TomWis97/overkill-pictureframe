@@ -14,6 +14,8 @@
             <input id="hasstoken" type="text"><br>
             <label for="weatherentity">Weather entity in Home Assistant</label>
             <input id="weatherentity" type="text"><br>
+            <label for="font-scale">Font scaling</label>
+            <input id="font-scale" type="number">%<br>
             <label for="entities">Additional entities to show</label>
             <textarea id="entities" name="entities" cols="80" rows="10"></textarea><br>
             <button type="button" onclick="saveSettings()">Save settings</button>
@@ -34,16 +36,19 @@
                 document.getElementById('hasstoken').value = json['hasstoken'];
                 document.getElementById('weatherentity').value = json['weatherentity'];
                 document.getElementById('entities').value = json['entities'];
+                document.getElementById('font-scale').value = json['font-scale'];
             }
 
             function loadSettings() {
                 if (!localStorage.getItem('configged')) {
                     document.getElementById('message').innerText = "No settings detected.";
+                    document.getElementById('font-scale').value = 100;
                 }
                 document.getElementById('hassurl').value = localStorage.getItem('hassurl');
                 document.getElementById('hasstoken').value = localStorage.getItem('hasstoken');
                 document.getElementById('weatherentity').value = localStorage.getItem('weatherentity');
                 document.getElementById('entities').value = localStorage.getItem('entities');
+                document.getElementById('font-scale').value = localStorage.getItem('font-scale');
             }
 
             function saveSettings() {
@@ -52,6 +57,7 @@
                 localStorage.setItem('hasstoken', document.getElementById('hasstoken').value);
                 localStorage.setItem('weatherentity', document.getElementById('weatherentity').value);
                 localStorage.setItem('entities', document.getElementById('entities').value);
+                localStorage.setItem('font-scale', document.getElementById('font-scale').value);
                 document.getElementById('message').innerText = "Settings saved.";
                 sleep(1000);
                 window.location.href = '/index.html';
