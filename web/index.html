@@ -213,16 +213,23 @@
             //
             // Date and time
             //
-            function updateTime() {
-                var date = new Date();
-                var h = date.getHours();
-                var m = date.getMinutes();
-                m = (m < 10) ? "0" + m : m;
-                var time = h + ":" + m;
-                document.getElementById("clock").innerText = time;
-
-                const dateOptions = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-                document.getElementById("date").innerText = date.toLocaleDateString("en-GB", dateOptions);
+            async function updateTimeLoop() {
+                while (true) {
+                    const date = new Date();
+                    const h = date.getHours();
+                    const m = date.getMinutes();
+                    const formattedMinutes = (m < 10) ? "0" + m : m;
+                    const time = h + ":" + formattedMinutes;
+            
+                    document.getElementById("clock").innerText = time;
+            
+                    const dateOptions = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+                    document.getElementById("date").innerText = date.toLocaleDateString("en-GB", dateOptions);
+            
+                    // Calculate time (in ms) until the next minute boundary
+                    const msUntilNextMinute = (60 - date.getSeconds()) * 1000 - date.getMilliseconds();
+                    await sleep(msUntilNextMinute);
+                }
             }
 
             function antiBurnIn() {
@@ -384,6 +391,9 @@
                 // Setup entity table
                 renderEntities(config_entities);
 
+                // Start time loop
+                updateTimeLoop();
+
                 // Set font scale
                 document.body.style.fontSize = config_fontscale + "%";
 
@@ -428,7 +438,6 @@
                         await sleep(1000);
                     }
                     newImage.src = 'pictures/' + randomPicture;
-                    updateTime();
                     updateWeather();
                     updateDescription(randomPicture);
                     updateEntities();
