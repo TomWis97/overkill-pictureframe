@@ -12,6 +12,9 @@
     <style>
         :root {
             --main-text-color: #fefefe;
+            --main-text-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.4),
+                0 0 10px rgba(0, 0, 0, 0.2);
         }
         html {
             height: 100%;
@@ -55,6 +58,7 @@
             bottom: 0;
             padding: 20px;
             color: var(--main-text-color);
+            text-shadow: var(--main-text-shadow);
             text-align: right;
         }
         #clock {
@@ -62,6 +66,11 @@
             display: block;
             font-family: 'Roboto', sans-serif;
             font-weight: 300;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        #clock.updating {
+            opacity: 0;
+            transform: scale(1.05);
         }
         #date {
             font-size: 2em;
@@ -85,6 +94,7 @@
             padding: 20px;
             text-align: left;
             color: var(--main-text-color);
+            text-shadow: var(--main-text-shadow);
             font-family: 'Roboto Condensed';
             font-weight: 300;
             font-size: 2em;
@@ -97,6 +107,7 @@
             padding: 20px;
             text-align: left;
             color: var(--main-text-color);
+            text-shadow: var(--main-text-shadow);
             font-family: 'Roboto Condensed';
             font-weight: 300;
             font-size: 2em;
@@ -106,6 +117,7 @@
         }
         .weather {
             color: var(--main-text-color);
+            text-shadow: var(--main-text-shadow);
             font-size: 8em;
             font-family: 'Roboto', sans-serif;
         }
@@ -214,18 +226,26 @@
             // Date and time
             //
             async function updateTimeLoop() {
+                const clock = document.getElementById("clock");
+                const dateElem = document.getElementById("date");
                 while (true) {
                     const date = new Date();
                     const h = date.getHours();
                     const m = date.getMinutes();
                     const formattedMinutes = (m < 10) ? "0" + m : m;
                     const time = h + ":" + formattedMinutes;
-            
-                    document.getElementById("clock").innerText = time;
+                    
+                    // Animation
+                    clock.classList.add("updating");
+                    await sleep(200);
+
+                    clock.innerText = time;
             
                     const dateOptions = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-                    document.getElementById("date").innerText = date.toLocaleDateString("en-GB", dateOptions);
+                    dateElem.innerText = date.toLocaleDateString("en-GB", dateOptions);
             
+                    clock.classList.remove("updating");
+
                     // Calculate time (in ms) until the next minute boundary
                     const msUntilNextMinute = (60 - date.getSeconds()) * 1000 - date.getMilliseconds();
                     await sleep(msUntilNextMinute);
